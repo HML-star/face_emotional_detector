@@ -13,22 +13,53 @@ st.write("Detecting emotions using original Haar Cascade & Keras Model.")
 # 💡 Set your default video file path here
 default_video_path = 'sample video/sample_face_test.mp4'
 
+st.subheader("🎬 Video Source")
+
+video_option = st.radio(
+    "Select Video Source",
+    ["Sample Video", "Upload Video"]
+)
+
 # 💡 Set your default image file path here
 default_image_path = "photo/p1.jpg"
 
-# Streamlit Component: User Upload
-uploaded_file = st.file_uploader("Choose a video file...", type=["mp4", "mov", "avi"])
+st.subheader("📷 Photo Source")
 
+photo_option = st.radio(
+    "Select Photo Source",
+    ["Sample Photo", "Upload Photo"]
+)
+
+# Streamlit Component: User Upload
 video_target = None
-if uploaded_file is not None:
-    with open("temp_video.mp4", "wb") as f:
-        f.write(uploaded_file.read())
-    video_target = "temp_video.mp4"
-else:
+
+if video_option == "Sample Video":
+
+    st.subheader("🎥 Sample Video")
+
     if os.path.exists(default_video_path):
         video_target = default_video_path
     else:
-        st.warning(f"⚠️ Default video not found at '{default_video_path}'. Please upload a video file.")
+        st.warning(
+            f"⚠️ Sample video not found at '{default_video_path}'"
+        )
+
+else:
+
+    st.subheader("📤 Upload Video")
+
+    uploaded_file = st.file_uploader(
+        "Choose a video file...",
+        type=["mp4", "mov", "avi"],
+        key="video_uploader"
+    )
+
+    if uploaded_file is not None:
+
+        with open("temp_video.mp4", "wb") as f:
+            f.write(uploaded_file.read())
+
+        video_target = "temp_video.mp4"
 
 # --- LOAD MODEL & HAAR CASCADE ---
 @st.cache_resource
@@ -55,123 +86,159 @@ face_classifier = load_cascade()
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
 # --- SAMPLE PHOTO FEATURE ---
-st.subheader("🖼️ Sample Image Emotion Detection")
 
-if os.path.exists(default_image_path):
+if photo_option == "Sample Photo":
 
-    sample_image = cv2.imread(default_image_path)
+    st.subheader("🖼️ Sample Image Emotion Detection")
 
-    gray_image = cv2.cvtColor(sample_image, cv2.COLOR_BGR2GRAY)
+    if os.path.exists(default_image_path):
 
-    faces = face_classifier.detectMultiScale(
-        gray_image,
-        scaleFactor=1.3,
-        minNeighbors=5
-    )
+        sample_image = cv2.imread(default_image_path)
 
-    for (x, y, w, h) in faces:
+        gray_image = cv2.cvtColor(sample_image, cv2.COLOR_BGR2GRAY)
 
-        cv2.rectangle(sample_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
-
-        roi_gray = gray_image[y:y+h, x:x+w]
-
-        if roi_gray.size == 0:
-            continue
-
-        roi_gray = cv2.resize(
-            roi_gray,
-            (48, 48),
-            interpolation=cv2.INTER_AREA
+        faces = face_classifier.detectMultiScale(
+            gray_image,
+            scaleFactor=1.3,
+            minNeighbors=5
         )
 
-        roi = roi_gray.astype("float") / 255.0
-        roi = np.expand_dims(roi, axis=0)
-        roi = np.expand_dims(roi, axis=-1)
+        for (x, y, w, h) in faces:
 
-        prediction = model.predict(roi, verbose=0)[0]
+            cv2.rectangle(sample_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-        label = emotion_labels[np.argmax(prediction)]
+            roi_gray = gray_image[y:y+h, x:x+w]
 
-        cv2.putText(
+            if roi_gray.size == 0:
+                continue
+
+            roi_gray = cv2.resize(
+                roi_gray,
+                (48, 48),
+                interpolation=cv2.INTER_AREA
+            )
+
+            roi = roi_gray.astype("float") / 255.0
+            roi = np.expand_dims(roi, axis=0)
+            roi = np.expand_dims(roi, axis=-1)
+
+            prediction = model.predict(roi, verbose=0)[0]
+
+            label = emotion_labels[np.argmax(prediction)]
+
+            cv2.putText(
+                sample_image,
+                label,
+                (x, y - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2
+            )
+
+        sample_rgb = cv2.cvtColor(
             sample_image,
-            label,
-            (x, y - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
-            2
+            cv2.COLOR_BGR2RGB
         )
 
-    sample_rgb = cv2.cvtColor(sample_image, cv2.COLOR_BGR2RGB)
+        st.image(
+            sample_rgb,
+            caption="Sample Image Result",
+            use_container_width=True
+        )
 
-    st.image(
-        sample_rgb,
-        caption="Sample Image Result",
-        use_container_width=True
-    )
+    else:
+        st.warning(
+            f"⚠️ Sample image not found at '{default_image_path}'"
+        )
 
 else:
-    st.warning(f"⚠️ Sample image not found at '{default_image_path}'")
 
-# --- PHOTO UPLOAD FEATURE ---
-st.subheader("📷 Image Emotion Detection")
+    # --- PHOTO UPLOAD FEATURE ---
+    st.subheader("📤 Upload Image")
 
-uploaded_image = st.file_uploader(
-    "Choose an image...",
-    type=["jpg", "jpeg", "png"],
-    key="image_uploader"
-)
-
-if uploaded_image is not None:
-    file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    faces = face_classifier.detectMultiScale(
-        gray_image,
-        scaleFactor=1.3,
-        minNeighbors=5
+    uploaded_image = st.file_uploader(
+        "Choose an image...",
+        type=["jpg", "jpeg", "png"],
+        key="image_uploader"
     )
 
-    for (x, y, w, h) in faces:
-        cv2.rectangle(image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    if uploaded_image is not None:
 
-        roi_gray = gray_image[y:y+h, x:x+w]
-
-        if roi_gray.size == 0:
-            continue
-
-        roi_gray = cv2.resize(
-            roi_gray,
-            (48, 48),
-            interpolation=cv2.INTER_AREA
+        file_bytes = np.asarray(
+            bytearray(uploaded_image.read()),
+            dtype=np.uint8
         )
 
-        roi = roi_gray.astype("float") / 255.0
-        roi = np.expand_dims(roi, axis=0)
-        roi = np.expand_dims(roi, axis=-1)
+        image = cv2.imdecode(
+            file_bytes,
+            cv2.IMREAD_COLOR
+        )
 
-        prediction = model.predict(roi, verbose=0)[0]
-        label_index = prediction.argmax()
-        label = emotion_labels[label_index]
-
-        cv2.putText(
+        gray_image = cv2.cvtColor(
             image,
-            label,
-            (x, y - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
-            2
+            cv2.COLOR_BGR2GRAY
         )
 
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    st.image(
-        image_rgb,
-        caption="Emotion Detection Result",
-        use_container_width=True
-    )
+        faces = face_classifier.detectMultiScale(
+            gray_image,
+            scaleFactor=1.3,
+            minNeighbors=5
+        )
+
+        for (x, y, w, h) in faces:
+
+            cv2.rectangle(
+                image,
+                (x, y),
+                (x+w, y+h),
+                (0, 255, 0),
+                2
+            )
+
+            roi_gray = gray_image[y:y+h, x:x+w]
+
+            if roi_gray.size == 0:
+                continue
+
+            roi_gray = cv2.resize(
+                roi_gray,
+                (48, 48),
+                interpolation=cv2.INTER_AREA
+            )
+
+            roi = roi_gray.astype("float") / 255.0
+            roi = np.expand_dims(roi, axis=0)
+            roi = np.expand_dims(roi, axis=-1)
+
+            prediction = model.predict(
+                roi,
+                verbose=0
+            )[0]
+
+            label_index = prediction.argmax()
+            label = emotion_labels[label_index]
+
+            cv2.putText(
+                image,
+                label,
+                (x, y - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2
+            )
+
+        image_rgb = cv2.cvtColor(
+            image,
+            cv2.COLOR_BGR2RGB
+        )
+
+        st.image(
+            image_rgb,
+            caption="Emotion Detection Result",
+            use_container_width=True
+        )
     
 # --- VIDEO PROCESSING ---
 if video_target and model is not None and not face_classifier.empty():
