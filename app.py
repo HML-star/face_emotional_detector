@@ -1,7 +1,8 @@
+import os
+os.environ['TF_USE_LEGACY_KERAS']='1'
 import cv2
 import numpy as np
 import gdown
-import os
 import streamlit as st
 from tensorflow.keras.models import load_model
 
