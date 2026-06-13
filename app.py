@@ -31,7 +31,7 @@ else:
 @st.cache_resource
 def load_emotion_model():
     # 💡 Insert  Google Drive File ID 
-    file_id = '1NX6DzMb8QDZFxc4YimclBRnUCjwIPsUF' 
+    file_id = '1M9vpjms_qUURizU6uP8lxSuC7rq9of9E' 
     url = f'https://drive.google.com/uc?id={file_id}'
     output = 'model.h5'
     
