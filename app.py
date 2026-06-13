@@ -11,7 +11,7 @@ st.title("🎬 Real-time Emotion Detector")
 st.write("Detecting emotions using original Haar Cascade & Keras Model.")
 
 # 💡 Set your default video file path here
-default_video_path = 'sample video/Face_Test1.mp4'
+default_video_path = 'sample video/sample_face_test.mp4'
 
 # Streamlit Component: User Upload
 uploaded_file = st.file_uploader("Choose a video file...", type=["mp4", "mov", "avi"])
