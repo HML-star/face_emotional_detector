@@ -1,5 +1,4 @@
 import os
-os.environ['TF_USE_LEGACY_KERAS']='1'
 import cv2
 import numpy as np
 import gdown
