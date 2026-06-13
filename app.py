@@ -40,7 +40,7 @@ def load_emotion_model():
         st.info("Downloading model from Google Drive... Please wait.")
         gdown.download(url, output, quiet=False)
         
-    return load_model(output)
+    return load_model(output, compile=False)
 
 @st.cache_resource
 def load_cascade():
