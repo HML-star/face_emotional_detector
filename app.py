@@ -13,6 +13,9 @@ st.write("Detecting emotions using original Haar Cascade & Keras Model.")
 # 💡 Set your default video file path here
 default_video_path = 'sample video/sample_face_test.mp4'
 
+# 💡 Set your default image file path here
+default_image_path = "photo/p1.jpg"
+
 # Streamlit Component: User Upload
 uploaded_file = st.file_uploader("Choose a video file...", type=["mp4", "mov", "avi"])
 
@@ -50,6 +53,65 @@ def load_cascade():
 model = load_emotion_model()
 face_classifier = load_cascade()
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
+
+# --- SAMPLE PHOTO FEATURE ---
+st.subheader("🖼️ Sample Image Emotion Detection")
+
+if os.path.exists(default_image_path):
+
+    sample_image = cv2.imread(default_image_path)
+
+    gray_image = cv2.cvtColor(sample_image, cv2.COLOR_BGR2GRAY)
+
+    faces = face_classifier.detectMultiScale(
+        gray_image,
+        scaleFactor=1.3,
+        minNeighbors=5
+    )
+
+    for (x, y, w, h) in faces:
+
+        cv2.rectangle(sample_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+        roi_gray = gray_image[y:y+h, x:x+w]
+
+        if roi_gray.size == 0:
+            continue
+
+        roi_gray = cv2.resize(
+            roi_gray,
+            (48, 48),
+            interpolation=cv2.INTER_AREA
+        )
+
+        roi = roi_gray.astype("float") / 255.0
+        roi = np.expand_dims(roi, axis=0)
+        roi = np.expand_dims(roi, axis=-1)
+
+        prediction = model.predict(roi, verbose=0)[0]
+
+        label = emotion_labels[np.argmax(prediction)]
+
+        cv2.putText(
+            sample_image,
+            label,
+            (x, y - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 255, 0),
+            2
+        )
+
+    sample_rgb = cv2.cvtColor(sample_image, cv2.COLOR_BGR2RGB)
+
+    st.image(
+        sample_rgb,
+        caption="Sample Image Result",
+        use_container_width=True
+    )
+
+else:
+    st.warning(f"⚠️ Sample image not found at '{default_image_path}'")
 
 # --- PHOTO UPLOAD FEATURE ---
 st.subheader("📷 Image Emotion Detection")
